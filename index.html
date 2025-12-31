@@ -1,53 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Griffin Gam</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-        }
-        #game-container {
-            width: 800px;
-            height: 600px;
-            background-color: #fff;
-            border: 2px solid #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        #start-btn {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 18px;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-    <h1>Welcome to Griffin Gam!</h1>
-    <div id="game-container">
-        <p>Game area</p>
-    </div>
-    <button id="start-btn">Start Game</button>
-
+<html>
+  <head>
+    <title>Griffin Game</title>
+  </head>
+  <body>
+    <h1>Welcome to Griffin Game</h1>
     <script>
-        const startBtn = document.getElementById('start-btn');
-        const gameContainer = document.getElementById('game-container');
-
-        startBtn.addEventListener('click', () => {
-            alert('Game started!');
-            gameContainer.innerHTML = '<p>Game in progress...</p>';
-        });
+      // Game logic goes here
+      console.log('Game initialized');
     </script>
-</body>
+  </body>
 </html>
