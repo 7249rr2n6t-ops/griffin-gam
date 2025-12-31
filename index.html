@@ -1,196 +1,149 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Griffin-Style Runner</title>
+using UnityEngine;
 
-<style>
-  body {
-    margin: 0;
-    background: #87ceeb;
-    overflow: hidden;
-    font-family: Arial, sans-serif;
-  }
+public class ChaosHouseGame : MonoBehaviour
+{
+    CharacterController controller;
+    Camera cam;
 
-  #game {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-  }
+    Vector3 velocity;
+    float gravity = -28f;
+    float speed = 4f;
+    float jumpForce = 8f;
 
-  #player {
-    position: absolute;
-    width: 60px;
-    height: 80px;
-    background: green;
-    bottom: 80px;
-    left: 80px;
-    border-radius: 10px;
-  }
+    float shakeTime;
 
-  #player::after {
-    content: "";
-    position: absolute;
-    width: 20px;
-    height: 10px;
-    border: 3px solid black;
-    border-radius: 10px;
-    top: 20px;
-    left: 18px;
-  }
+    void Start()
+    {
+        // Player
+        GameObject player = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        player.name = "BennyBroadbelly";
+        player.transform.position = new Vector3(0, 1, -6);
+        controller = player.AddComponent<CharacterController>();
+        controller.height = 1.7f;
+        controller.radius = 0.6f;
 
-  .obstacle {
-    position: absolute;
-    width: 40px;
-    height: 80px;
-    background: red;
-    bottom: 80px;
-  }
+        cam = Camera.main;
+        cam.transform.SetParent(player.transform);
+        cam.transform.localPosition = new Vector3(0, 1.4f, -3);
+        cam.fieldOfView = 65;
 
-  #ground {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    height: 80px;
-    background: #654321;
-  }
-
-  #score {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    font-size: 24px;
-    color: black;
-  }
-
-  #gameOver {
-    display: none;
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    color: white;
-    font-size: 40px;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-  }
-
-  button {
-    margin-top: 20px;
-    font-size: 20px;
-    padding: 10px 20px;
-  }
-</style>
-</head>
-
-<body>
-<div id="game">
-  <div id="score">Score: 0</div>
-  <div id="player"></div>
-  <div id="ground"></div>
-
-  <div id="gameOver">
-    <div>GAME OVER</div>
-    <button onclick="restart()">Restart</button>
-  </div>
-</div>
-
-<script>
-  const player = document.getElementById("player");
-  const game = document.getElementById("game");
-  const scoreDisplay = document.getElementById("score");
-  const gameOverScreen = document.getElementById("gameOver");
-
-  let y = 0;
-  let velocity = 0;
-  let gravity = -1;
-  let jumping = false;
-  let score = 0;
-  let obstacle;
-  let running = true;
-
-  function jump() {
-    if (!jumping && running) {
-      velocity = 18;
-      jumping = true;
-    }
-  }
-
-  document.addEventListener("click", jump);
-  document.addEventListener("touchstart", jump);
-
-  function createObstacle() {
-    obstacle = document.createElement("div");
-    obstacle.className = "obstacle";
-    obstacle.style.left = "100%";
-    game.appendChild(obstacle);
-
-    let moveInterval = setInterval(() => {
-      if (!running) {
-        clearInterval(moveInterval);
-        return;
-      }
-
-      let x = obstacle.offsetLeft;
-      obstacle.style.left = x - 6 + "px";
-
-      // Collision
-      const p = player.getBoundingClientRect();
-      const o = obstacle.getBoundingClientRect();
-
-      if (
-        p.left < o.right &&
-        p.right > o.left &&
-        p.bottom > o.top &&
-        p.top < o.bottom
-      ) {
-        endGame();
-        clearInterval(moveInterval);
-      }
-
-      if (x < -50) {
-        obstacle.remove();
-        score++;
-        scoreDisplay.innerText = "Score: " + score;
-        clearInterval(moveInterval);
-      }
-    }, 20);
-  }
-
-  function gameLoop() {
-    if (!running) return;
-
-    velocity += gravity;
-    y += velocity;
-
-    if (y < 0) {
-      y = 0;
-      velocity = 0;
-      jumping = false;
+        BuildHouse();
     }
 
-    player.style.bottom = y + 80 + "px";
-    requestAnimationFrame(gameLoop);
-  }
+    void Update()
+    {
+        float x = Input.GetAxis("Horizontal");
+        float z = Input.GetAxis("Vertical");
 
-  function startObstacles() {
-    setInterval(() => {
-      if (running) createObstacle();
-    }, 2000);
-  }
+        Vector3 move = transform.right * x + transform.forward * z;
+        controller.Move(move * speed * Time.deltaTime);
 
-  function endGame() {
-    running = false;
-    gameOverScreen.style.display = "flex";
-  }
+        if (controller.isGrounded)
+        {
+            velocity.y = -2f;
+            if (Input.GetButtonDown("Jump"))
+                velocity.y = jumpForce;
+        }
 
-  function restart() {
-    location.reload();
-  }
+        velocity.y += gravity * Time.deltaTime;
+        controller.Move(velocity * Time.deltaTime);
 
-  gameLoop();
-  startObstacles();
-</script>
-</body>
-</html>
+        if (shakeTime > 0)
+        {
+            cam.transform.localPosition += Random.insideUnitSphere * 0.15f;
+            shakeTime -= Time.deltaTime;
+        }
+    }
+
+    void BuildHouse()
+    {
+        // Meg Room
+        MakeFloor(new Vector3(0,0,-6), new Vector3(10,1,10), false);
+
+        // Baby obstacle in doorway
+        GameObject baby = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        baby.transform.position = new Vector3(0,0.3f,-1);
+        baby.transform.localScale = new Vector3(3,0.6f,1.2f);
+        baby.AddComponent<ChaosObstacle>();
+
+        // Hallway (slippery socks)
+        MakeFloor(new Vector3(0,0,6), new Vector3(4,1,12), true);
+
+        // Stairs (betrayal steps)
+        for (int i = 0; i < 7; i++)
+        {
+            GameObject step = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            step.transform.position = new Vector3(0, i * 0.3f, 13 + i);
+            step.transform.localScale = new Vector3(4,0.3f,1);
+            step.AddComponent<BetrayStep>();
+        }
+
+        // Living room bounce couch
+        GameObject couch = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        couch.transform.position = new Vector3(0,1.2f,24);
+        couch.transform.localScale = new Vector3(6,1,3);
+        couch.AddComponent<BouncePad>();
+    }
+
+    void MakeFloor(Vector3 pos, Vector3 size, bool slippery)
+    {
+        GameObject floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        floor.transform.position = pos;
+        floor.transform.localScale = size;
+        if (slippery)
+            floor.AddComponent<SlipperyFloor>();
+    }
+
+    public void ShakeCamera()
+    {
+        shakeTime = 0.4f;
+    }
+}
+
+// ===== CHAOS COMPONENTS =====
+
+class ChaosObstacle : MonoBehaviour
+{
+    void OnCollisionEnter(Collision col)
+    {
+        if (col.gameObject.name == "BennyBroadbelly")
+        {
+            col.transform.position = new Vector3(0, 1, -6);
+            Camera.main.GetComponentInParent<ChaosHouseGame>().ShakeCamera();
+        }
+    }
+}
+
+class SlipperyFloor : MonoBehaviour
+{
+    void OnCollisionStay(Collision col)
+    {
+        col.transform.position += col.transform.forward * Time.deltaTime * 2f;
+    }
+}
+
+class BetrayStep : MonoBehaviour
+{
+    bool triggered;
+
+    void OnCollisionEnter(Collision col)
+    {
+        if (!triggered && Random.value > 0.5f)
+        {
+            triggered = true;
+            transform.Rotate(30, 0, 0);
+        }
+    }
+}
+
+class BouncePad : MonoBehaviour
+{
+    void OnCollisionEnter(Collision col)
+    {
+        CharacterController cc = col.gameObject.GetComponent<CharacterController>();
+        if (cc != null)
+        {
+            col.transform.position += Vector3.up * 3f;
+        }
+    }
+}
